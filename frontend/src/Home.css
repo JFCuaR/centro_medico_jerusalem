@@ -1,0 +1,84 @@
+/* Estilos generales */
+#wrapper {
+    display: flex;
+    align-items: stretch;
+    overflow-x: hidden;
+    transition: all 0.25s ease;
+}
+
+#sidebar-wrapper {
+    min-height: 100vh;
+    width: 15rem;
+    margin-left: -15rem;
+    transition: margin 0.25s ease-out;
+    background-color: #343a40;
+}
+
+#sidebar-wrapper .list-group {
+    width: 15rem;
+}
+
+#sidebar-wrapper .list-group-item {
+    color: white;
+    background-color: #343a40;
+    border: none;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: #495057;
+}
+
+#page-content-wrapper {
+    flex-grow: 1;
+    padding: 20px;
+    transition: all 0.25s ease-out;
+}
+
+/* Mostrar el sidebar cuando está toggled */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+/* Mantener el sidebar visible en pantallas grandes */
+@media (min-width: 800px) {
+    #sidebar-wrapper {
+        margin-left: -15rem; /* Ocultar el sidebar por defecto */
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0; /* Mostrar el sidebar cuando se presiona el botón */
+    }
+
+    #page-content-wrapper {
+        min-width: calc(100% - 15rem); /* Ajustar el contenido */
+    }
+
+    #menu-toggle {
+        display: none; /* Ocultar el botón de menú en pantallas grandes */
+    }
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #page-content-wrapper {
+        min-width: 100%;
+    }
+}
+
+/* Estilo para el contenedor de la imagen */
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
+}
+
+.image-container img {
+    max-width: 100%;
+    height: auto;
+}
