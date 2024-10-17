@@ -13,6 +13,7 @@ import Agendarcita1 from './agendarcita1';
 import Agenda from './Agenda';
 import Reportes from './reportes';
 import Login from './Login';
+import Devoluciones from './Devoluciones';
 import PrivateRoute from './PrivateRoute';
 import { AuthProvider } from './AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -36,6 +37,7 @@ function App() {
           <Route path="/AgendarCita" element={<PrivateRoute><AgendarCita /></PrivateRoute>} />
           <Route path="/Agendarcita1" element={<PrivateRoute><Agendarcita1 /></PrivateRoute>} />
           <Route path="/Agenda" element={<PrivateRoute><Agenda /></PrivateRoute>} />
+          <Route path="/Devoluciones" element={<PrivateRoute><Devoluciones /></PrivateRoute>} />
           <Route path="/Reportes" element={<PrivateRoute><Reportes /></PrivateRoute>} />
         </Routes>
       </Router>

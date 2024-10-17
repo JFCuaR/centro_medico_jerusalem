@@ -16,7 +16,7 @@ let db;
 (async function initializeDB() {
   try {
     db = await mysql.createConnection({
-     /* host: 'localhost',
+     /*host: 'localhost',
       user: 'root',
       password: '',
       database: 'jerusalem',
@@ -26,9 +26,9 @@ let db;
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
-      ssl: {
+      /*ssl: {
         ca: fs.readFileSync(process.env.SSL_CERT) // Ruta al archivo de certificado
-      }
+      }*/
     });
     console.log('Conectado a la base de datos');
   } catch (err) {
@@ -358,6 +358,8 @@ app.get('/vermedicamentos', async (req, res) => {
       medico_responsable, 
       medicamentos_recetados, 
       dpi, 
+      telefono,  // Agregado
+      fecha_nacimiento,  // Agregado
       antecedentes_medico,
       antecedentes_quirurgico,
       antecedentes_alergico,
@@ -365,23 +367,22 @@ app.get('/vermedicamentos', async (req, res) => {
       antecedentes_familiares,
       antecedentes_vicios_y_manias
     } = req.body;
-
+  
     // Convertir medicamentos_recetados a una cadena con formato adecuado
     const medicamentosFormateados = medicamentos_recetados
       .filter(medicamento => medicamento.nombre && medicamento.modo_administracion && medicamento.cantidad && medicamento.unidad)
       .map(medicamento => {
-        // Crear una cadena con espacios entre los campos del medicamento y agregar coma al final solo si es necesario
         const comentario = medicamento.comentario ? ` ${medicamento.comentario}` : '';
         return `${medicamento.nombre} ${medicamento.modo_administracion} ${medicamento.cantidad} ${medicamento.unidad}${comentario}`;
       })
-      .join(' | ');  // Separar medicamentos diferentes con ' | ', evitando una coma al final
-
+      .join(' | ');  // Separar medicamentos diferentes con ' | '
+  
     try {
       // Insertar en la tabla historial_medico
       const [result] = await db.query(
         `INSERT INTO historial_medico 
-        (nombre_paciente, fecha_consulta, diagnostico, sintomas, tratamiento, sexo, religion, medico_responsable, medicamentos_recetados, dpi) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        (nombre_paciente, fecha_consulta, diagnostico, sintomas, tratamiento, sexo, religion, medico_responsable, medicamentos_recetados, dpi, telefono, fecha_nacimiento) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
         [
           nombre_paciente,
           fecha_consulta,
@@ -391,13 +392,15 @@ app.get('/vermedicamentos', async (req, res) => {
           sexo,
           religion,
           medico_responsable,
-          medicamentosFormateados, // Guardar los medicamentos formateados sin comas finales
+          medicamentosFormateados, 
           dpi,
+          telefono,  // Agregado
+          fecha_nacimiento  // Agregado
         ]
       );
-
+  
       const id_historial = result.insertId;  // Obtener el ID del historial médico recién insertado
-
+  
       // Insertar en la tabla antecedentes_medicos
       await db.query(
         `INSERT INTO antecedentes_medicos 
@@ -413,14 +416,15 @@ app.get('/vermedicamentos', async (req, res) => {
           antecedentes_vicios_y_manias,
         ]
       );
-
+  
       res.status(201).send('Historial médico y antecedentes guardados exitosamente');
-
+  
     } catch (err) {
       console.error('Error al guardar el historial médico y antecedentes:', err);
       res.status(500).send('Error al guardar el historial médico y antecedentes');
     }
-});
+  });
+  
 
 
 app.post('/agregar_usuario', async (req, res) => {
@@ -573,15 +577,152 @@ app.get('/pacientes/:id', async (req, res) => {
   app.get('/sales/:date', async (req, res) => {
     const selectedDate = req.params.date;
   
-    const query = `
-      SELECT dv.id_medicamento, SUM(dv.cantidad) AS total_cantidad, 
-             m.precio_compra, m.precio_venta, 
-             SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
+    // Consulta para obtener todas las ventas (devueltas y no devueltas) para la tabla
+    const queryAllSales = `
+      SELECT 
+        dv.id_medicamento, 
+        SUM(dv.cantidad) AS cantidad_total, 
+        dv.precio_unitario, 
+        m.nombre AS medicamento, 
+        dv.devuelto, 
+        SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
       FROM detalles_venta dv
       JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
       JOIN ventas v ON dv.id_venta = v.id_venta
-      WHERE DATE(v.fecha) = ?
-      GROUP BY dv.id_medicamento
+      WHERE DATE(v.fecha) = ? 
+      GROUP BY dv.id_medicamento, dv.precio_unitario, m.nombre, dv.devuelto;
+    `;
+  
+    // Consulta para obtener solo las ventas no devueltas para las gráficas
+    const queryNonReturnedSales = `
+      SELECT 
+        SUM(dv.cantidad * dv.precio_unitario) AS total_ventas,
+        SUM(dv.cantidad) AS cantidad_total, 
+        dv.precio_unitario, 
+        SUM(dv.cantidad * m.precio_compra) AS total_cost
+      FROM detalles_venta dv
+      JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
+      JOIN ventas v ON dv.id_venta = v.id_venta
+      WHERE DATE(v.fecha) = ? AND dv.devuelto = 0
+      GROUP BY dv.id_medicamento, dv.precio_unitario;
+    `;
+  
+    try {
+      // Obtener todas las ventas (para la tabla)
+      const [allSalesResults] = await db.query(queryAllSales, [selectedDate]);
+  
+      // Obtener solo las ventas no devueltas (para la gráfica)
+      const [nonReturnedResults] = await db.query(queryNonReturnedSales, [selectedDate]);
+  
+      let totalSales = 0;
+      let totalCost = 0;
+  
+      // Calcular totales de ventas no devueltas para las gráficas
+      nonReturnedResults.forEach(item => {
+        totalSales += parseFloat(item.total_ventas) || 0;
+        totalCost += parseFloat(item.total_cost) || 0;
+      });
+  
+      res.json({
+        totalSales: totalSales.toFixed(2),  // Total de ventas (solo no devueltas)
+        totalCost: totalCost.toFixed(2),    // Total de costo (solo no devueltas)
+        profit: (totalSales - totalCost).toFixed(2),  // Ganancia neta (solo no devueltas)
+        details: allSalesResults.map(item => ({
+          medicamento: item.medicamento,
+          cantidad: item.cantidad_total,  // Usamos la cantidad total agregada
+          precio_unitario: item.precio_unitario,
+          devuelto: item.devuelto // Incluye si fue devuelto o no
+        }))
+      });
+    } catch (err) {
+      console.error('Error al obtener el reporte diario:', err);
+      res.status(500).json({ error: 'Error al obtener el reporte diario' });
+    }
+  });
+  
+  
+  
+  app.get('/sales/week/:date', async (req, res) => {
+    const selectedDate = req.params.date;
+  
+    // Consulta para obtener todas las ventas (devueltas y no devueltas) para la tabla
+    const queryAllSales = `
+      SELECT 
+        dv.id_medicamento, 
+        SUM(dv.cantidad) AS cantidad_total, 
+        dv.precio_unitario, 
+        m.nombre AS medicamento, 
+        dv.devuelto, 
+        SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
+      FROM detalles_venta dv
+      JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
+      JOIN ventas v ON dv.id_venta = v.id_venta
+      WHERE WEEK(v.fecha) = WEEK(?)
+      GROUP BY dv.id_medicamento, dv.precio_unitario, m.nombre, dv.devuelto;
+    `;
+  
+    // Consulta para obtener solo las ventas no devueltas para las gráficas
+    const queryNonReturnedSales = `
+      SELECT 
+        SUM(dv.cantidad * dv.precio_unitario) AS total_ventas,
+        SUM(dv.cantidad) AS cantidad_total, 
+        dv.precio_unitario, 
+        SUM(dv.cantidad * m.precio_compra) AS total_cost
+      FROM detalles_venta dv
+      JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
+      JOIN ventas v ON dv.id_venta = v.id_venta
+      WHERE WEEK(v.fecha) = WEEK(?) AND dv.devuelto = 0
+      GROUP BY dv.id_medicamento, dv.precio_unitario;
+    `;
+  
+    try {
+      // Obtener todas las ventas (para la tabla)
+      const [allSalesResults] = await db.query(queryAllSales, [selectedDate]);
+  
+      // Obtener solo las ventas no devueltas (para la gráfica)
+      const [nonReturnedResults] = await db.query(queryNonReturnedSales, [selectedDate]);
+  
+      let totalSales = 0;
+      let totalCost = 0;
+  
+      // Calcular totales de ventas no devueltas para las gráficas
+      nonReturnedResults.forEach(item => {
+        totalSales += parseFloat(item.total_ventas) || 0;
+        totalCost += parseFloat(item.total_cost) || 0;
+      });
+  
+      res.json({
+        totalSales: totalSales.toFixed(2),  // Total de ventas (solo no devueltas)
+        totalCost: totalCost.toFixed(2),    // Total de costo (solo no devueltas)
+        profit: (totalSales - totalCost).toFixed(2),  // Ganancia neta (solo no devueltas)
+        details: allSalesResults.map(item => ({
+          medicamento: item.medicamento,
+          cantidad: item.cantidad_total,  // Usamos la cantidad total agregada
+          precio_unitario: item.precio_unitario,
+          devuelto: item.devuelto // Incluye si fue devuelto o no
+        }))
+      });
+    } catch (err) {
+      console.error('Error al obtener el reporte semanal:', err);
+      res.status(500).json({ error: 'Error al obtener el reporte semanal' });
+    }
+  });
+
+  app.get('/sales/month/:date', async (req, res) => {
+    const selectedDate = req.params.date;
+  
+    const query = `
+      SELECT 
+        dv.id_medicamento, 
+        SUM(dv.cantidad) AS cantidad_total, 
+        dv.precio_unitario, 
+        m.nombre AS medicamento, 
+        SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
+      FROM detalles_venta dv
+      JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
+      JOIN ventas v ON dv.id_venta = v.id_venta
+      WHERE MONTH(v.fecha) = MONTH(?) AND dv.devuelto = 0  -- Excluir productos devueltos
+      GROUP BY dv.id_medicamento, dv.precio_unitario, m.nombre;
     `;
   
     try {
@@ -590,101 +731,122 @@ app.get('/pacientes/:id', async (req, res) => {
       let totalSales = 0;
       let totalCost = 0;
   
-      // Nos aseguramos de que los resultados se sumen correctamente como números
       results.forEach(item => {
         totalSales += parseFloat(item.total_ventas) || 0;
-        totalCost += parseFloat(item.total_cantidad) * parseFloat(item.precio_compra) || 0;
+        totalCost += parseFloat(item.cantidad_total) * parseFloat(item.precio_unitario) || 0;
       });
   
       res.json({
-        totalSales: totalSales.toFixed(2),  // Redondeamos a 2 decimales
+        totalSales: totalSales.toFixed(2),
         totalCost: totalCost.toFixed(2),
-        profit: (totalSales - totalCost).toFixed(2)
+        profit: (totalSales - totalCost).toFixed(2),
+        details: results.map(item => ({
+          medicamento: item.medicamento,
+          cantidad: item.cantidad_total,  // Usamos la cantidad total agregada
+          precio_unitario: item.precio_unitario,
+          devuelto: 0 // Aquí ya no hay productos devueltos
+        }))
       });
     } catch (err) {
-      console.error('Error al obtener el reporte diario:', err);
-      res.status(500).json({ error: 'Error al obtener el reporte diario' });
+      console.error('Error al obtener el reporte mensual:', err);
+      res.status(500).json({ error: 'Error al obtener el reporte mensual' });
     }
   });
   
+   
 
-  // Ruta para obtener datos de ventas y detalles de ventas
-// server.js
-app.get('/sales/week/:date', async (req, res) => {
-  const selectedDate = req.params.date;
-
-  const query = `
-    SELECT dv.id_medicamento, SUM(dv.cantidad) AS total_cantidad, 
-           m.precio_compra, m.precio_venta, 
-           SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
-    FROM detalles_venta dv
-    JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
-    JOIN ventas v ON dv.id_venta = v.id_venta
-    WHERE WEEK(v.fecha) = WEEK(?)
-    GROUP BY dv.id_medicamento
-  `;
-
+app.post('/devolver_producto', async (req, res) => {
+  const { id_venta, id_medicamento, cantidad_devuelta } = req.body;
+  
   try {
-    const [results] = await db.query(query, [selectedDate]);
+    // Verificar que la conexión esté disponible
+    if (!db) {
+      return res.status(500).json({ msg: 'Error de conexión a la base de datos' });
+    }
 
-    let totalSales = 0;
-    let totalCost = 0;
+    // Buscar el producto original de la venta
+    const [venta] = await db.query('SELECT * FROM detalles_venta WHERE id_venta = ? AND id_medicamento = ?', [id_venta, id_medicamento]);
 
-    results.forEach(item => {
-      totalSales += parseFloat(item.total_ventas) || 0;  // Nos aseguramos de sumar los valores como números
-      totalCost += parseFloat(item.total_cantidad) * parseFloat(item.precio_compra) || 0;
-    });
+    if (venta.length === 0) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
 
-    res.json({
-      totalSales: totalSales.toFixed(2),  // Aseguramos que los valores tengan 2 decimales
-      totalCost: totalCost.toFixed(2),
-      profit: (totalSales - totalCost).toFixed(2)
-    });
-  } catch (err) {
-    console.error('Error al obtener el reporte semanal:', err);
-    res.status(500).json({ error: 'Error al obtener el reporte semanal' });
+    // Verificar si el producto ya fue devuelto
+    if (venta[0].devuelto) {
+      return res.status(400).json({ error: 'El producto ya fue devuelto' });
+    }
+
+    // Actualizar el stock del medicamento
+    await db.query('UPDATE medicamentos SET stock = stock + ? WHERE id_medicamento = ?', [cantidad_devuelta, id_medicamento]);
+
+    // Marcar el producto como devuelto
+    await db.query('UPDATE detalles_venta SET devuelto = TRUE WHERE id_venta = ? AND id_medicamento = ?', [id_venta, id_medicamento]);
+
+    res.status(200).json({ message: 'Producto devuelto y stock actualizado' });
+  } catch (error) {
+    console.error('Error en la devolución:', error);
+    res.status(500).json({ error: 'Error en la devolución', details: error.message });
   }
 });
 
 
-
-app.get('/sales/month/:date', async (req, res) => {
-  const selectedDate = req.params.date;
-
-  const query = `
-    SELECT dv.id_medicamento, SUM(dv.cantidad) AS total_cantidad, 
-           m.precio_compra, m.precio_venta, 
-           SUM(dv.cantidad * dv.precio_unitario) AS total_ventas
-    FROM detalles_venta dv
+app.get('/buscar_ventas', async (req, res) => {
+  const { searchTerm, barcodeSearchTerm } = req.query;
+  let query = `
+    SELECT v.id_venta, m.id_medicamento, m.nombre, m.codigo_barra, dv.cantidad, dv.precio_unitario, v.fecha, dv.devuelto
+    FROM ventas v
+    JOIN detalles_venta dv ON v.id_venta = dv.id_venta
     JOIN medicamentos m ON dv.id_medicamento = m.id_medicamento
-    JOIN ventas v ON dv.id_venta = v.id_venta
-    WHERE MONTH(v.fecha) = MONTH(?)
-    GROUP BY dv.id_medicamento
+    WHERE m.stock > 0
   `;
 
+  const params = [];
+
+  if (searchTerm) {
+    query += ` AND m.nombre LIKE ?`;
+    params.push(`%${searchTerm}%`);
+  }
+
+  if (barcodeSearchTerm) {
+    query += ` AND m.codigo_barra LIKE ?`;
+    params.push(`%${barcodeSearchTerm}%`);
+  }
+
+  // Ordenar por id_venta en lugar de fecha
+  query += ` ORDER BY v.id_venta DESC`;
+
   try {
-    const [results] = await db.query(query, [selectedDate]);
-
-    let totalSales = 0;
-    let totalCost = 0;
-
-    // Asegurarnos de que las sumas se hagan correctamente como números
-    results.forEach(item => {
-      totalSales += parseFloat(item.total_ventas);  // Usamos parseFloat para asegurarnos de que sean números
-      totalCost += parseFloat(item.total_cantidad) * parseFloat(item.precio_compra);
-    });
-
-    res.json({
-      totalSales: totalSales.toFixed(2),  // Aseguramos que los valores sean correctos y limitamos a 2 decimales
-      totalCost: totalCost.toFixed(2),
-      profit: (totalSales - totalCost).toFixed(2)
-    });
-  } catch (err) {
-    console.error('Error al obtener el reporte mensual:', err);
-    res.status(500).json({ error: 'Error al obtener el reporte mensual' });
+    const [ventas] = await db.query(query, params);
+    res.json({ ventas });
+  } catch (error) {
+    console.error('Error al buscar ventas:', error);
+    res.status(500).json({ error: 'Error al buscar ventas' });
   }
 });
 
+
+app.get('/buscar_antecedentes', async (req, res) => {
+  const { tipo, termino } = req.query;
+
+  if (!['medico', 'quirurgico', 'alergico', 'traumaticos', 'familiares', 'vicios_y_manias'].includes(tipo)) {
+    return res.status(400).json({ error: 'Tipo de antecedente no válido' });
+  }
+
+  const columna = `antecedentes_${tipo}`;
+
+  try {
+    const [resultados] = await db.query(
+      `SELECT DISTINCT ${columna} FROM antecedentes_medicos WHERE ${columna} LIKE ? LIMIT 5`, 
+      [`%${termino}%`]
+    );
+
+    const sugerencias = resultados.map((fila) => fila[columna]);
+    res.json(sugerencias);
+  } catch (error) {
+    console.error('Error al buscar antecedentes:', error);
+    res.status(500).json({ error: 'Error al buscar antecedentes' });
+  }
+});
 
 
   app.listen(3001, () => {

@@ -30,11 +30,48 @@ function Home() {
     antecedentes_vicios_y_manias: ''
   });
 
+  const [sugerencias, setSugerencias] = useState([]);
   const [recetaGenerada, setRecetaGenerada] = useState(false);
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleNombreChange = async (e) => {
+    const value = e.target.value;
+    setHistorialMedico({ ...historialMedico, nombre_paciente: value });
+    
+    // Realizar la búsqueda de pacientes
+    if (value.length >= 3) {
+      try {
+        const { data } = await axios.get(`${URL}/buscar_pacientes`, {
+          params: { nombre: value }
+        });
+        setSugerencias(data); // Actualiza las sugerencias
+      } catch (error) {
+        console.error('Error al buscar pacientes:', error);
+      }
+    } else {
+      setSugerencias([]);
+    }
+  };
+
+  const handleSeleccionarSugerencia = async (paciente) => {
+    setHistorialMedico({
+      ...historialMedico,
+      nombre_paciente: paciente.nombre_paciente,
+      dpi: paciente.dpi,
+      sexo: paciente.sexo,
+      religion: paciente.religion,
+      antecedentes_medico: paciente.antecedentes_medico,
+      antecedentes_quirurgico: paciente.antecedentes_quirurgico,
+      antecedentes_alergico: paciente.antecedentes_alergico,
+      antecedentes_traumaticos: paciente.antecedentes_traumaticos,
+      antecedentes_familiares: paciente.antecedentes_familiares,
+      antecedentes_vicios_y_manias: paciente.antecedentes_vicios_y_manias
+    });
+    setSugerencias([]);
   };
 
   const handleHistorialChange = (e) => {
@@ -135,6 +172,8 @@ function Home() {
       sexo: '',
       religion: '',
       medico_responsable: '',
+      telefono: '',  // Agregado
+      fecha_nacimiento: '',  
       medicamentos_recetados: [
         { nombre: '', modo_administracion: '', cantidad: '', unidad: '', comentario: '' }
       ],
@@ -155,11 +194,10 @@ function Home() {
     doc.addImage(imgData, 'JPEG', 15, 10, 50, 20);
 
     doc.setFontSize(14);
-    doc.text('Dr. Oscar Herrera', 80, 20);
+    doc.text('Dr. Oscar Herrera', 80, 25);
     doc.setFontSize(12);
-    doc.text('MÉDICO GENERAL', 85, 25);
     doc.text('CENTRO MEDICO JERUSALEM', 75, 30);
-    doc.text('CONSULTAS • RECIÉN NACIDOS • NIÑOS • ADOLESCENTES • VACUNAS', 50, 35);
+    doc.text('CONSULTAS • RECIÉN NACIDOS • NIÑOS • ADOLESCENTES • ADULTOS', 50, 35);
     doc.line(15, 40, 195, 40);
 
     doc.setFontSize(12);
@@ -187,7 +225,7 @@ function Home() {
     doc.text('CENTRO MEDICO JERUSALEM', 20, 260);
     doc.text('Camino a aldea lolemi, chocola,', 20, 270);
     doc.text('Aldea Chocola, san pablo jocopilas, suchitepequez', 20, 275);
-    doc.text('Tel: 00000000', 20, 280);
+    doc.text('Tel: 3161 2260', 20, 280);
 
     doc.save('receta-medica.pdf');
   };
@@ -211,18 +249,20 @@ function Home() {
             <br />
           </div>
           <div className="list-group list-group-flush">
-            
           <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
               Inicio
              </Link>
              <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
               Agregar Usuario
              </Link>
-             <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
+            <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
               Agregar Medicamentos
             </Link>
             <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
               Farmacia
+            </Link>
+            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
+              Devoluciones
             </Link>
             <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
               Historial Medico
@@ -230,16 +270,10 @@ function Home() {
             <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
               Buscar paciente
             </Link>
-          </div>
-          <div className="sidebar-heading text-white mt-4">CITAS</div>
-          <div className="list-group list-group-flush">
-            <Link to="/AgendarCita" className="list-group-item list-group-item-action bg-dark text-white">
-              Agendar Cita
+            <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
+              Reportes
             </Link>
-            <Link to="/Agenda" className="list-group-item list-group-item-action bg-dark text-white">
-              Ver Citas
-            </Link>
-          </div>
+          </div>          
         </div>
 
         <div id="page-content-wrapper">
@@ -255,15 +289,27 @@ function Home() {
                 <form onSubmit={handleSubmit}>
                   <div className="form-row">
                     <div className="form-group col-md-6">
-                      <label>Nombre del Paciente:</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="nombre_paciente"
-                        value={historialMedico.nombre_paciente}
-                        onChange={handleHistorialChange}
-                        required
-                      />
+                    <label>Nombre del Paciente:</label>
+          <input
+            type="text"
+            className="form-control"
+            name="nombre_paciente"
+            value={historialMedico.nombre_paciente}
+            onChange={handleNombreChange}
+            autoComplete="off"
+          />
+          {sugerencias.length > 0 && (
+            <ul className="suggestions-list">
+              {sugerencias.map((sugerencia) => (
+                <li
+                  key={sugerencia.dpi}
+                  onClick={() => handleSeleccionarSugerencia(sugerencia)}
+                >
+                  {sugerencia.nombre_paciente}
+                </li>
+              ))}
+            </ul>
+          )}
                     </div>
                     <div className="form-group col-md-6">
                       <label>Fecha de Consulta:</label>
@@ -354,6 +400,29 @@ function Home() {
                         required
                       />
                     </div>
+                    <div className="form-group col-md-6">
+    <label>Teléfono:</label>
+    <input
+      type="text"
+      className="form-control"
+      name="telefono"
+      value={historialMedico.telefono}
+      onChange={handleHistorialChange}
+      maxLength={15}
+      required
+    />
+  </div>
+  <div className="form-group col-md-6">
+    <label>Fecha de Nacimiento:</label>
+    <input
+      type="date"
+      className="form-control"
+      name="fecha_nacimiento"
+      value={historialMedico.fecha_nacimiento}
+      onChange={handleHistorialChange}
+      required
+    />
+  </div>
                   </div>
 
                   <div className="form-group">

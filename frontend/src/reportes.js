@@ -3,16 +3,21 @@ import { Link } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import miImagen from './logo.jpg';
+import axios from 'axios';
 import './Home.css';
 import { Bar } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
 Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001';
+
+
 function Home() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [salesData, setSalesData] = useState(null);
+  const [salesDetails, setSalesDetails] = useState([]); // Inicializamos como un array vacío
   const [reportType, setReportType] = useState('day');
 
   const toggleSidebar = () => {
@@ -31,19 +36,29 @@ function Home() {
     return `${year}-${month}-${day}`;
   };
 
-  const fetchSalesData = (date) => {
+  const fetchSalesData = async (date) => {
     const formattedDate = formatDate(date);
-    let url = `http://localhost:3001/sales/${formattedDate}`;
+    let url = `${URL}/sales/${formattedDate}`;
+  
     if (reportType === 'week') {
-      url = `http://localhost:3001/sales/week/${formattedDate}`;
+      url = `${URL}/sales/week/${formattedDate}`;
     } else if (reportType === 'month') {
-      url = `http://localhost:3001/sales/month/${formattedDate}`;
+      url = `${URL}/sales/month/${formattedDate}`;
     }
-
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => setSalesData(data))
-      .catch((error) => console.error('Error al obtener los datos:', error));
+  
+    try {
+      const response = await axios.get(url);
+      const data = response.data;
+  
+      setSalesData({
+        totalSales: data.totalSales,
+        totalCost: data.totalCost,
+        profit: data.profit,
+      });
+      setSalesDetails(data.details || []); // Aseguramos que 'details' exista, o lo inicializamos como un array vacío
+    } catch (error) {
+      console.error('Error al obtener los datos:', error);
+    }
   };
 
   useEffect(() => {
@@ -92,7 +107,7 @@ function Home() {
           </div>
           <div className="sidebar-heading text-white">JERUSALEM <br /><br /></div>
           <div className="list-group list-group-flush">
-            <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
+          <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
               Inicio
              </Link>
              <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
@@ -104,25 +119,19 @@ function Home() {
             <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
               Farmacia
             </Link>
+            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
+              Devoluciones
+            </Link>
             <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
               Historial Medico
             </Link>
             <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
               Buscar paciente
             </Link>
-          </div>
-          <div className="sidebar-heading text-white mt-4">CITAS</div>
-          <div className="list-group list-group-flush">
-            <Link to="/AgendarCita" className="list-group-item list-group-item-action bg-dark text-white">
-              Agendar Cita
-            </Link>
-            <Link to="/Agenda" className="list-group-item list-group-item-action bg-dark text-white">
-              Ver Citas
-            </Link>
             <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
               Reportes
             </Link>
-          </div>
+          </div>          
         </div>
         {/* /#sidebar-wrapper */}
         {/* Page Content */}
@@ -170,6 +179,39 @@ function Home() {
                   {/* Mostrar gráfico de barras */}
                   <div className="mt-4">
                     <Bar data={chartData} options={chartOptions} />
+                  </div>
+
+                  {/* Tabla con el desglose de las ventas */}
+                  <div className="mt-4">
+                    <h5>Desglose de Ventas</h5>
+                    <table className="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>Medicamento</th>
+                          <th>Cantidad</th>
+                          <th>Precio Unitario</th>
+                          <th>Total Venta</th>
+                          <th>Devuelto</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {salesDetails.length > 0 ? (
+                          salesDetails.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.medicamento}</td>
+                              <td>{item.cantidad}</td>
+                              <td>Q. {item.precio_unitario}</td>
+                              <td>Q. {(item.cantidad * item.precio_unitario).toFixed(2)}</td>
+                              <td>{item.devuelto === 1 ? 'Sí' : 'No'}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="text-center">No hay detalles de ventas disponibles</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </>
               ) : (

@@ -118,25 +118,19 @@ function Home() {
             <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
               Farmacia
             </Link>
+            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
+              Devoluciones
+            </Link>
             <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
               Historial Medico
             </Link>
             <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
               Buscar paciente
             </Link>
-          </div>
-          <div className="sidebar-heading text-white mt-4">CITAS</div>
-          <div className="list-group list-group-flush">
-            <Link to="/AgendarCita" className="list-group-item list-group-item-action bg-dark text-white">
-              Agendar Cita
-            </Link>
-            <Link to="/Agenda" className="list-group-item list-group-item-action bg-dark text-white">
-              Ver Citas
-            </Link>
             <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
               Reportes
             </Link>
-          </div>
+          </div>          
         </div>
         {/* /#sidebar-wrapper */}
         
