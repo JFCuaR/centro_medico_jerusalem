@@ -149,7 +149,7 @@ function Home() {
                       <td>{paciente.id}</td>
                       <td>{paciente.nombre_paciente}</td>
                       <td>{paciente.dpi}</td>
-                      <td>{paciente.fecha_consulta}</td>
+                      <td>{paciente.fecha_consulta?.slice(0, 10)}</td>
                       <td>{paciente.diagnostico}</td>
                       <td>
                         <ul>
