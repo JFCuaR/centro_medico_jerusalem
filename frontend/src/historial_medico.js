@@ -477,7 +477,7 @@ function Home() {
                             <option value="cm">Cm</option>
                             <option value="puff">Puff</option>
                             <option value="ampolla">Ampolla</option>
-                            <option value="sobre">Ampolla</option>
+                            <option value="sobre">sobre</option>
                           </select>
                         </div>
                         <div className="col-md-3">
