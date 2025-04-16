@@ -455,7 +455,7 @@ function Home() {
                         </div>
                         <div className="col-md-2">
                           <input
-                            type="number"
+                            type="text"
                             step="0.1"
                             className="form-control"
                             name={`cantidad_${index}`}
@@ -477,6 +477,7 @@ function Home() {
                             <option value="cm">Cm</option>
                             <option value="puff">Puff</option>
                             <option value="ampolla">Ampolla</option>
+                            <option value="sobre">Ampolla</option>
                           </select>
                         </div>
                         <div className="col-md-3">
@@ -570,7 +571,7 @@ function Home() {
                   </div>
 
                   <button type="submit" className="btn btn-primary mt-3">
-                    Enviar
+                    Guardar
                   </button>
                   <button type="button" className="btn btn-secondary mt-3 ml-3" onClick={handleNuevo}>
                     Nuevo
