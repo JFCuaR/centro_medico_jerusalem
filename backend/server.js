@@ -11,30 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Configuración de la conexión a la base de datos usando Promesas
-let db;
-
-(async function initializeDB() {
-  try {
-    db = await mysql.createConnection({
-     /*host: 'localhost',
-      user: 'root',
-      password: '',
-      database: 'jerusalem',
-      port: 3307,*/
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT,
-      /*ssl: {
-        ca: fs.readFileSync(process.env.SSL_CERT) // Ruta al archivo de certificado
-      }*/
-    });
-    console.log('Conectado a la base de datos');
-  } catch (err) {
-    console.error('Error conectando a la base de datos:', err);
-  }
-})();
+const db = require('./db');
 
 // Ruta para manejar el inicio de sesión
 app.post('/login', async (req, res) => {
