@@ -176,7 +176,10 @@ function Home() {
                       <td>{paciente.id}</td>
                       <td>{paciente.nombre_paciente}</td>
                       <td>{paciente.dpi}</td>
-                      <td>{paciente.fecha_consulta}</td>
+                      <td> {paciente.fecha_consulta
+                            ? paciente.fecha_consulta.slice(0, 10).split('-').reverse().join('/')
+                           : 'No disponible'}
+                      </td>
                       <td>{paciente.diagnostico}</td>
                       <td>{paciente.telefono}</td>
                       <td>
