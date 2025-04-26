@@ -176,7 +176,7 @@ function Home() {
                       <td>{paciente.id}</td>
                       <td>{paciente.nombre_paciente}</td>
                       <td>{paciente.dpi}</td>
-                      <td>{new Date(paciente.fecha_consulta).toLocaleDateString()}</td>
+                      <td>{selectedPaciente.fecha_consulta}</td>
                       <td>{paciente.diagnostico}</td>
                       <td>{paciente.telefono}</td>
                       <td>
