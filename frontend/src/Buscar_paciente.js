@@ -12,6 +12,9 @@ function Home() {
   const [dpiSearchTerm, setDpiSearchTerm] = useState(''); // Para buscar por DPI
   const [selectedPaciente, setSelectedPaciente] = useState(null); // Paciente seleccionado para mostrar detalles
   const [showModal, setShowModal] = useState(false); // Controlar la ventana emergente
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+
 
   const navigate = useNavigate();
 
@@ -47,6 +50,29 @@ function Home() {
   const handleVisualizar = (paciente) => {
     setSelectedPaciente(paciente);
     setShowModal(true);
+  };
+
+  const handleActualizar = (paciente) => {
+    setSelectedPaciente(paciente);
+    setShowUpdateModal(true);
+  };
+  
+  const handleCloseUpdateModal = () => {
+    setShowUpdateModal(false);
+    setSelectedPaciente(null);
+  };
+  
+  
+  const handleGuardarActualizacion = async () => {
+    try {
+      await axios.put(`${URL}/actualizar_paciente/${selectedPaciente.id}`, selectedPaciente);
+      alert('Paciente actualizado correctamente');
+      handleCloseUpdateModal();
+      fetchPacientes(); // Vuelve a cargar la lista
+    } catch (error) {
+      console.error('Error al actualizar el paciente:', error);
+      alert('Error al actualizar el paciente');
+    }
   };
 
   // Función para cerrar el modal
@@ -139,6 +165,7 @@ function Home() {
                     <th>DPI</th>
                     <th>Fecha de Consulta</th>
                     <th>Diagnóstico</th>
+                    <th>Telefono</th>
                     <th>Medicamentos Recetados</th>
                     <th>Acciones</th>
                   </tr>
@@ -149,8 +176,9 @@ function Home() {
                       <td>{paciente.id}</td>
                       <td>{paciente.nombre_paciente}</td>
                       <td>{paciente.dpi}</td>
-                      <td>{paciente.fecha_consulta?.slice(0, 10)}</td>
+                      <td>{new Date(paciente.fecha_consulta).toLocaleDateString()}</td>
                       <td>{paciente.diagnostico}</td>
+                      <td>{paciente.telefono}</td>
                       <td>
                         <ul>
                           {paciente.medicamentos_recetados.map((medicamento, index) => (
@@ -159,10 +187,14 @@ function Home() {
                         </ul>
                       </td>
                       <td>
-                        <button className="btn btn-info" onClick={() => handleVisualizar(paciente)}>
-                          Visualizar
-                        </button>
+                      <button className="btn btn-info mr-2" onClick={() => handleVisualizar(paciente)}>
+                       Visualizar
+                      </button>
+                      <button className="btn btn-warning" onClick={() => handleActualizar(paciente)}>
+                       Actualizar
+                       </button>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
@@ -172,7 +204,7 @@ function Home() {
             {/* Modal para mostrar los detalles del paciente */}
             {showModal && selectedPaciente && (
               <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <div className="modal-dialog">
+                <div className="modal-dialog modal-lg">
                   <div className="modal-content">
                     <div className="modal-header">
                       <h5 className="modal-title">Detalles del Paciente</h5>
@@ -181,23 +213,71 @@ function Home() {
                       </button>
                     </div>
                     <div className="modal-body">
-                      <p><strong>Nombre del Paciente:</strong> {selectedPaciente.nombre_paciente}</p>
-                      <p><strong>DPI:</strong> {selectedPaciente.dpi}</p>
-                      <p><strong>Fecha de Consulta:</strong> {new Date(selectedPaciente.fecha_consulta).toLocaleDateString()}</p>
-                      <p><strong>Diagnóstico:</strong> {selectedPaciente.diagnostico}</p>
-                      <p><strong>Medicamentos Recetados:</strong></p>
-                      <ul>
-                        {selectedPaciente.medicamentos_recetados.map((medicamento, index) => (
-                          <li key={index}>{medicamento}</li>
-                        ))}
-                      </ul>
-                      {/* Mostrar otros detalles como antecedentes si están disponibles */}
-                      <p><strong>Antecedentes Médicos:</strong> {selectedPaciente.antecedentes_medico}</p>
-                      <p><strong>Antecedentes Quirúrgicos:</strong> {selectedPaciente.antecedentes_quirurgico}</p>
-                      <p><strong>Antecedentes Alérgicos:</strong> {selectedPaciente.antecedentes_alergico}</p>
-                      <p><strong>Antecedentes Traumáticos:</strong> {selectedPaciente.antecedentes_traumaticos}</p>
-                      <p><strong>Antecedentes Familiares:</strong> {selectedPaciente.antecedentes_familiares}</p>
-                      <p><strong>Vicios y Manías:</strong> {selectedPaciente.antecedentes_vicios_y_manias}</p>
+                    <div className="container">
+
+  <h5 className="text-center mb-4">Datos Personales</h5>
+
+  <div className="row">
+    <div className="col-md-6">
+      <p><strong>Nombre:</strong> {selectedPaciente.nombre_paciente}</p>
+      <p><strong>Fecha de Nacimiento:</strong> {selectedPaciente.fecha_nacimiento ? new Date(selectedPaciente.fecha_nacimiento).toLocaleDateString() : 'No registrada'}</p>
+      <p><strong>Sexo:</strong> {selectedPaciente.sexo}</p>
+      <p><strong>Religión:</strong> {selectedPaciente.religion}</p>
+    </div>
+
+    <div className="col-md-6">
+      <p><strong>DPI:</strong> {selectedPaciente.dpi}</p>
+      <p><strong>Fecha de Consulta:</strong> {new Date(selectedPaciente.fecha_consulta).toLocaleDateString()}</p>
+      <p><strong>Médico Responsable:</strong> {selectedPaciente.medico_responsable}</p>
+      <p><strong>Teléfono:</strong> {selectedPaciente.telefono}</p>
+    </div>
+  </div>
+
+  <hr />
+
+  <h5 className="text-center mb-4">Diagnóstico</h5>
+
+  <div className="row">
+    <div className="col-12">
+      <p><strong>Diagnóstico:</strong> {selectedPaciente.diagnostico}</p>
+    </div>
+  </div>
+
+  <hr />
+
+  <h5 className="text-center mb-4">Medicamentos Recetados</h5>
+
+  <div className="row">
+    <div className="col-12">
+      <ul>
+        {selectedPaciente.medicamentos_recetados.map((medicamento, index) => (
+          <li key={index}>{medicamento}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <hr />
+
+  <h5 className="text-center mb-4">Antecedentes Médicos</h5>
+
+  <div className="row">
+    <div className="col-md-6">
+      <p><strong>Antecedentes Médicos:</strong> {selectedPaciente.antecedentes_medico}</p>
+      <p><strong>Antecedentes Quirúrgicos:</strong> {selectedPaciente.antecedentes_quirurgico}</p>
+      <p><strong>Antecedentes Alérgicos:</strong> {selectedPaciente.antecedentes_alergico}</p>
+    </div>
+
+    <div className="col-md-6">
+      <p><strong>Antecedentes Traumáticos:</strong> {selectedPaciente.antecedentes_traumaticos}</p>
+      <p><strong>Antecedentes Familiares:</strong> {selectedPaciente.antecedentes_familiares}</p>
+      <p><strong>Vicios y Manías:</strong> {selectedPaciente.antecedentes_vicios_y_manias}</p>
+    </div>
+  </div>
+
+</div>
+
+
                     </div>
                     <div className="modal-footer">
                       <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
@@ -208,6 +288,62 @@ function Home() {
                 </div>
               </div>
             )}
+            {showUpdateModal && selectedPaciente && (
+  <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <div className="modal-dialog">
+      <div className="modal-content">
+
+        {/* Encabezado del modal */}
+        <div className="modal-header">
+          <h5 className="modal-title">Actualizar Paciente</h5>
+          <button type="button" className="close" onClick={handleCloseUpdateModal}>
+            &times;
+          </button>
+        </div>
+
+        {/* Cuerpo del modal */}
+        <div className="modal-body">
+        <strong>Nombre:</strong>
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="Nombre del Paciente"
+            value={selectedPaciente.nombre_paciente}
+            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, nombre_paciente: e.target.value })}
+          />
+          <strong>DPI:</strong>
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="DPI"
+            value={selectedPaciente.dpi}
+            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, dpi: e.target.value })}
+          />
+          <strong>Telefono:</strong>
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="Teléfono"
+            value={selectedPaciente.telefono}
+            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, telefono: e.target.value })}
+          />
+        </div>
+
+        {/* Pie del modal */}
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={handleCloseUpdateModal}>
+            Cancelar
+          </button>
+          <button type="button" className="btn btn-primary" onClick={handleGuardarActualizacion}>
+            Guardar Cambios
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
 
           </div>
         </div>
