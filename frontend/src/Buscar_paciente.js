@@ -177,8 +177,9 @@ function Home() {
                       <td>{paciente.nombre_paciente}</td>
                       <td>{paciente.dpi}</td>
                       <td>
-                           {paciente.fecha_consulta ? new Date(paciente.fecha_consulta).toLocaleDateString() : 'No disponible'}
-                      </td>
+  {paciente.fecha_consulta ? new Date(paciente.fecha_consulta).toLocaleDateString() : 'No disponible'}
+</td>
+
                       <td>{paciente.diagnostico}</td>
                       <td>{paciente.telefono}</td>
                       <td>
