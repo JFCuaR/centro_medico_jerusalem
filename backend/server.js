@@ -435,39 +435,41 @@ app.post('/agregar_usuario', async (req, res) => {
 app.get('/buscar_pacientes', async (req, res) => {
   const { nombre, dpi } = req.query;
 
-  // Construimos la consulta SQL con condicionales y un JOIN para antecedentes
-  let sql = `SELECT h.id, h.nombre_paciente, h.fecha_consulta, h.diagnostico, h.sintomas, h.tratamiento, h.sexo, h.religion, h.medico_responsable, h.medicamentos_recetados, h.dpi, 
-             a.antecedentes_medico, a.antecedentes_quirurgico, a.antecedentes_alergico, a.antecedentes_traumaticos, a.antecedentes_familiares, a.antecedentes_vicios_y_manias
-             FROM historial_medico h
-             LEFT JOIN antecedentes_medicos a ON h.id = a.id_historial
-             WHERE 1=1`;
+  let sql = `
+    SELECT h.id, h.nombre_paciente, h.fecha_consulta, h.diagnostico, h.sintomas, h.tratamiento, 
+           h.sexo, h.religion, h.medico_responsable, h.medicamentos_recetados, h.dpi, 
+           h.telefono, 
+           a.antecedentes_medico, a.antecedentes_quirurgico, a.antecedentes_alergico, 
+           a.antecedentes_traumaticos, a.antecedentes_familiares, a.antecedentes_vicios_y_manias
+    FROM historial_medico h
+    LEFT JOIN antecedentes_medicos a ON h.id = a.id_historial
+    WHERE 1=1
+  `;
 
   const params = [];
 
-  // Si se proporciona el nombre, añadimos la condición
   if (nombre) {
     sql += ' AND h.nombre_paciente LIKE ?';
     params.push(`%${nombre}%`);
   }
 
-  // Si se proporciona el DPI, añadimos la condición
   if (dpi) {
     sql += ' AND h.dpi LIKE ?';
     params.push(`%${dpi}%`);
   }
 
-  // Ordenar por la fecha de consulta más reciente
   sql += ' ORDER BY h.fecha_consulta DESC';
 
   try {
     const [result] = await db.query(sql, params);
 
-    // Parsear medicamentos si están en formato cadena separada por comas
+    console.log('Pacientes encontrados:', result); // 🔥 Esto te ayudará a ver si devuelve datos
+
     const pacientes = result.map((paciente) => ({
       ...paciente,
       medicamentos_recetados: typeof paciente.medicamentos_recetados === 'string'
-        ? paciente.medicamentos_recetados.split(',') // Si es una cadena, la dividimos por comas
-        : [], // Si no hay medicamentos o el formato es incorrecto, devolvemos un array vacío
+        ? paciente.medicamentos_recetados.split(',').map(m => m.trim()) // Limpieza extra
+        : [],
       antecedentes_medico: paciente.antecedentes_medico || '',
       antecedentes_quirurgico: paciente.antecedentes_quirurgico || '',
       antecedentes_alergico: paciente.antecedentes_alergico || '',
@@ -484,11 +486,28 @@ app.get('/buscar_pacientes', async (req, res) => {
 });
 
 
+app.put('/actualizar_paciente/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nombre_paciente, dpi, telefono } = req.body;
 
+  // Validaciones básicas
+  if (!nombre_paciente || !dpi || !telefono) {
+    return res.status(400).json({ message: 'Faltan datos obligatorios para actualizar' });
+  }
 
-
-
-
+  try {
+    const sql = `
+      UPDATE historial_medico 
+      SET nombre_paciente = ?, dpi = ?, telefono = ?
+      WHERE id = ?
+    `;
+    await db.query(sql, [nombre_paciente, dpi, telefono, id]);
+    res.status(200).json({ message: 'Paciente actualizado correctamente' });
+  } catch (error) {
+    console.error('Error actualizando paciente:', error);
+    res.status(500).json({ message: 'Error actualizando paciente' });
+  }
+});
 
 // Ruta para obtener los pacientes
 // Ruta para obtener los pacientes con sus detalles de tratamiento
