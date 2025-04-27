@@ -293,8 +293,8 @@ function Home() {
             )}
             {showUpdateModal && selectedPaciente && (
   <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-    <div className="modal-dialog">
-      <div className="modal-content">
+  <div className="modal-dialog modal-lg">
+    <div className="modal-content">
 
         {/* Encabezado del modal */}
         <div className="modal-header">
@@ -305,32 +305,97 @@ function Home() {
         </div>
 
         {/* Cuerpo del modal */}
-        <div className="modal-body">
-        <strong>Nombre:</strong>
-          <input
-            type="text"
-            className="form-control mb-2"
-            placeholder="Nombre del Paciente"
-            value={selectedPaciente.nombre_paciente}
-            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, nombre_paciente: e.target.value })}
-          />
-          <strong>DPI:</strong>
-          <input
-            type="text"
-            className="form-control mb-2"
-            placeholder="DPI"
-            value={selectedPaciente.dpi}
-            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, dpi: e.target.value })}
-          />
-          <strong>Telefono:</strong>
-          <input
-            type="text"
-            className="form-control mb-2"
-            placeholder="Teléfono"
-            value={selectedPaciente.telefono}
-            onChange={(e) => setSelectedPaciente({ ...selectedPaciente, telefono: e.target.value })}
-          />
-        </div>
+        <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+        <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+  {/* DATOS PERSONALES */}
+  <h5 className="text-center">Datos Personales</h5>
+  <div className="form-row">
+    <div className="form-group col-md-6">
+      <label>Nombre</label>
+      <input type="text" className="form-control" value={selectedPaciente.nombre_paciente || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, nombre_paciente: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>DPI</label>
+      <input type="text" className="form-control" value={selectedPaciente.dpi || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, dpi: e.target.value })} />
+    </div>
+  </div>
+
+  <div className="form-row">
+    <div className="form-group col-md-6">
+      <label>Fecha de Consulta</label>
+      <input type="date" className="form-control" value={selectedPaciente.fecha_consulta ? selectedPaciente.fecha_consulta.slice(0,10) : ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, fecha_consulta: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Fecha de Nacimiento</label>
+      <input type="date" className="form-control" value={selectedPaciente.fecha_nacimiento ? selectedPaciente.fecha_nacimiento.slice(0,10) : ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, fecha_nacimiento: e.target.value })} />
+    </div>
+  </div>
+
+  <div className="form-row">
+    <div className="form-group col-md-6">
+      <label>Sexo</label>
+      <input type="text" className="form-control" value={selectedPaciente.sexo || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, sexo: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Religión</label>
+      <input type="text" className="form-control" value={selectedPaciente.religion || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, religion: e.target.value })} />
+    </div>
+  </div>
+
+  <div className="form-group">
+    <label>Teléfono</label>
+    <input type="text" className="form-control" value={selectedPaciente.telefono || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, telefono: e.target.value })} />
+  </div>
+
+  <div className="form-group">
+    <label>Médico Responsable</label>
+    <input type="text" className="form-control" value={selectedPaciente.medico_responsable || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, medico_responsable: e.target.value })} />
+  </div>
+
+  {/* DIAGNOSTICO */}
+  <h5 className="text-center mt-4">Diagnóstico</h5>
+  <div className="form-group">
+    <textarea className="form-control" rows="2" value={selectedPaciente.diagnostico || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, diagnostico: e.target.value })}></textarea>
+  </div>
+
+  {/* MEDICAMENTOS */}
+  <h5 className="text-center mt-4">Medicamentos Recetados</h5>
+  <div className="form-group">
+    <textarea className="form-control" rows="2" value={selectedPaciente.medicamentos_recetados ? selectedPaciente.medicamentos_recetados.join(', ') : ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, medicamentos_recetados: e.target.value.split(',').map(m => m.trim()) })}></textarea>
+  </div>
+
+  {/* ANTECEDENTES */}
+  <h5 className="text-center mt-4">Antecedentes Médicos</h5>
+  <div className="form-row">
+    <div className="form-group col-md-6">
+      <label>Antecedentes Médicos</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_medico || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_medico: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Antecedentes Quirúrgicos</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_quirurgico || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_quirurgico: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Antecedentes Alérgicos</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_alergico || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_alergico: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Antecedentes Traumáticos</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_traumaticos || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_traumaticos: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Antecedentes Familiares</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_familiares || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_familiares: e.target.value })} />
+    </div>
+    <div className="form-group col-md-6">
+      <label>Vicios y Manías</label>
+      <input type="text" className="form-control" value={selectedPaciente.antecedentes_vicios_y_manias || ''} onChange={(e) => setSelectedPaciente({ ...selectedPaciente, antecedentes_vicios_y_manias: e.target.value })} />
+    </div>
+  </div>
+  </div>
+  </div>
+</div>
 
         {/* Pie del modal */}
         <div className="modal-footer">
