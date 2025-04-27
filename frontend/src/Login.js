@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from './AuthContext';
 import axios from 'axios';
+import miImagen from './logo.jpg';
 import './Login.css';  // Estilos personalizados
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
@@ -55,7 +56,9 @@ const Login = () => {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h2 className="text-center mb-4">Login</h2>
+                <div className="image-container mt-4">
+                              <img src={miImagen} alt="logo" />
+                            </div>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                         <label htmlFor="email" className="form-label">Usuario</label>
