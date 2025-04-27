@@ -436,7 +436,7 @@ app.get('/buscar_pacientes', async (req, res) => {
   const { nombre, dpi } = req.query;
 
   let sql = `
-    SELECT h.id, h.nombre_paciente, h.fecha_consulta, h.diagnostico, h.sintomas, h.tratamiento, 
+    SELECT h.id, h.nombre_paciente, h.fecha_consulta, h.fecha_nacimiento, h.diagnostico, h.sintomas, h.tratamiento, 
            h.sexo, h.religion, h.medico_responsable, h.medicamentos_recetados, h.dpi, 
            h.telefono, 
            a.antecedentes_medico, a.antecedentes_quirurgico, a.antecedentes_alergico, 
@@ -486,28 +486,96 @@ app.get('/buscar_pacientes', async (req, res) => {
 });
 
 
+// Función para asegurarnos de enviar solo fecha yyyy-MM-dd
+const formatearFecha = (fecha) => {
+  if (!fecha) return null; // Si viene vacío, guardamos NULL en base de datos
+  return fecha.slice(0, 10); // Cortamos solo los primeros 10 caracteres
+};
+
 app.put('/actualizar_paciente/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre_paciente, dpi, telefono } = req.body;
 
-  // Validaciones básicas
-  if (!nombre_paciente || !dpi || !telefono) {
-    return res.status(400).json({ message: 'Faltan datos obligatorios para actualizar' });
-  }
+  const {
+    nombre_paciente,
+    dpi,
+    fecha_consulta,
+    fecha_nacimiento,
+    sexo,
+    religion,
+    telefono,
+    medico_responsable,
+    diagnostico,
+    medicamentos_recetados,
+    antecedentes_medico,
+    antecedentes_quirurgico,
+    antecedentes_alergico,
+    antecedentes_traumaticos,
+    antecedentes_familiares,
+    antecedentes_vicios_y_manias
+  } = req.body;
 
   try {
-    const sql = `
-      UPDATE historial_medico 
-      SET nombre_paciente = ?, dpi = ?, telefono = ?
+    // Actualizar tabla historial_medico
+    const sqlHistorial = `
+      UPDATE historial_medico
+      SET 
+        nombre_paciente = ?, 
+        dpi = ?, 
+        fecha_consulta = ?, 
+        fecha_nacimiento = ?, 
+        sexo = ?, 
+        religion = ?, 
+        telefono = ?, 
+        medico_responsable = ?, 
+        diagnostico = ?, 
+        medicamentos_recetados = ?
       WHERE id = ?
     `;
-    await db.query(sql, [nombre_paciente, dpi, telefono, id]);
+
+    await db.query(sqlHistorial, [
+      nombre_paciente,
+      dpi,
+      formatearFecha(fecha_consulta),
+      formatearFecha(fecha_nacimiento),
+      sexo,
+      religion,
+      telefono,
+      medico_responsable,
+      diagnostico,
+      Array.isArray(medicamentos_recetados) ? medicamentos_recetados.join(', ') : medicamentos_recetados,
+      id
+    ]);
+
+    // Actualizar tabla antecedentes_medicos
+    const sqlAntecedentes = `
+      UPDATE antecedentes_medicos
+      SET 
+        antecedentes_medico = ?, 
+        antecedentes_quirurgico = ?, 
+        antecedentes_alergico = ?, 
+        antecedentes_traumaticos = ?, 
+        antecedentes_familiares = ?, 
+        antecedentes_vicios_y_manias = ?
+      WHERE id_historial = ?
+    `;
+
+    await db.query(sqlAntecedentes, [
+      antecedentes_medico,
+      antecedentes_quirurgico,
+      antecedentes_alergico,
+      antecedentes_traumaticos,
+      antecedentes_familiares,
+      antecedentes_vicios_y_manias,
+      id
+    ]);
+
     res.status(200).json({ message: 'Paciente actualizado correctamente' });
   } catch (error) {
     console.error('Error actualizando paciente:', error);
     res.status(500).json({ message: 'Error actualizando paciente' });
   }
 });
+
 
 // Ruta para obtener los pacientes
 // Ruta para obtener los pacientes con sus detalles de tratamiento
