@@ -24,33 +24,35 @@ app.post('/login', async (req, res) => {
   }
 
   try {
-    // Verificamos que la conexión esté disponible
     if (!db) {
       return res.status(500).json({ msg: 'Error de conexión a la base de datos' });
     }
 
-    // Realizamos la consulta SQL para obtener el usuario
     const [results] = await db.query('SELECT * FROM usuarios WHERE usuario = ?', [username]);
 
-    // Verificamos si se encontró el usuario
     if (results.length > 0) {
-      const user = results[0]; // Asignamos el resultado a la variable `user`
+      const user = results[0];
 
-      // Verificamos el estado del usuario
       if (user.estado !== 'activa') {
         return res.status(403).json({ msg: 'Cuenta desactivada, contacta con el administrador.' });
       }
 
-      // Comparamos la contraseña ingresada con el hash almacenado
       const isMatch = await bcrypt.compare(password, user.contraseña);
-      
-      console.log('Contraseña ingresada:', password);
-      console.log('Hash almacenado:', user.contraseña); // <-- Verificamos el hash almacenado
-      console.log('Resultado de la comparación:', isMatch); // <-- Verificamos si la comparación es exitosa
 
       if (isMatch) {
         const token = jwt.sign({ id: user.id_usuario, rol: user.rol }, 'secreto', { expiresIn: '1h' });
-        return res.json({ token, rol: user.rol }); // Retornamos token y rol
+
+        return res.json({
+          token,
+          rol: user.rol,
+          user: {
+            id: user.id_usuario,
+            nombre: user.nombre,
+            usuario: user.usuario,
+            rol: user.rol,
+            estado: user.estado
+          }
+        });
       } else {
         return res.status(400).json({ msg: 'Contraseña incorrecta' });
       }
@@ -62,6 +64,45 @@ app.post('/login', async (req, res) => {
     return res.status(500).json({ msg: 'Error del servidor' });
   }
 });
+
+
+//ruta profile para recuperar quien esta logueado:
+const verificarToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, 'secreto', (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+app.get('/profile', verificarToken, async (req, res) => {
+  try {
+    const [results] = await db.query('SELECT * FROM usuarios WHERE id_usuario = ?', [req.user.id]);
+
+    if (results.length === 0) return res.sendStatus(404);
+
+    const user = results[0];
+
+    res.json({
+      user: {
+        id: user.id_usuario,
+        nombre: user.nombre,
+        usuario: user.usuario,
+        rol: user.rol,
+        estado: user.estado
+      }
+    });
+  } catch (err) {
+    console.error('Error al obtener perfil:', err);
+    res.status(500).json({ msg: 'Error del servidor' });
+  }
+});
+//Fin de la ruta profile
 
 // Ruta para agregar productos
 app.post('/medicamentos', async (req, res) => {
@@ -403,7 +444,8 @@ app.get('/vermedicamentos', async (req, res) => {
   });
   
 
-
+  
+/*
 app.post('/agregar_usuario', async (req, res) => {
   const { nombre, usuario, contrasena, rol, estado } = req.body;
 
@@ -422,6 +464,42 @@ app.post('/agregar_usuario', async (req, res) => {
   } catch (error) {
     console.error('Error al agregar usuario:', error);
     res.status(500).send('Error al agregar usuario');
+  }
+});
+*/
+
+app.post('/agregar_usuario', async (req, res) => {
+  const { nombre, usuario, contrasena, rol, estado } = req.body;
+
+  try {
+    // Encriptar la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(contrasena, salt);
+
+    // Verificar si el usuario ya existe
+    const [rows] = await db.query('SELECT * FROM usuarios WHERE usuario = ?', [usuario]);
+
+    if (rows.length > 0) {
+      // Usuario ya existe → actualizarlo
+      const updateQuery = `
+        UPDATE usuarios 
+        SET nombre = ?, contraseña = ?, rol = ?, estado = ?
+        WHERE usuario = ?
+      `;
+      await db.query(updateQuery, [nombre, hashedPassword, rol, estado, usuario]);
+      res.status(200).send('Usuario actualizado exitosamente');
+    } else {
+      // Usuario no existe → insertarlo
+      const insertQuery = `
+        INSERT INTO usuarios (nombre, usuario, contraseña, rol, estado)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      await db.query(insertQuery, [nombre, usuario, hashedPassword, rol, estado]);
+      res.status(201).send('Usuario agregado exitosamente');
+    }
+  } catch (error) {
+    console.error('Error al agregar o actualizar usuario:', error);
+    res.status(500).send('Error al procesar la solicitud');
   }
 });
 
@@ -444,6 +522,7 @@ app.get('/buscar_pacientes', async (req, res) => {
     FROM historial_medico h
     LEFT JOIN antecedentes_medicos a ON h.id = a.id_historial
     WHERE 1=1
+    
   `;
 
   const params = [];
@@ -575,6 +654,9 @@ app.put('/actualizar_paciente/:id', async (req, res) => {
     res.status(500).json({ message: 'Error actualizando paciente' });
   }
 });
+
+
+
 
 
 // Ruta para obtener los pacientes
