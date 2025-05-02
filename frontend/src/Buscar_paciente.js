@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Sidebar from './sidebar'; 
+import Navbar from './Navbar'; 
 import './Home.css';
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
@@ -89,44 +91,12 @@ function Home() {
       <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
       <div className={`d-flex ${isSidebarOpen ? 'toggled' : ''}`} id="wrapper">
         {/* Sidebar */}
-        <div className="bg-dark border-right" id="sidebar-wrapper">
-          <div className="sidebar-heading text-white"><br /><br />CENTRO MEDICO</div>
-          <div className="sidebar-heading text-white"> JERUSALEM <br /><br /></div>
-          <div className="list-group list-group-flush">
-          <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
-              Inicio
-             </Link>
-             <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Usuario
-             </Link>
-            <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Medicamentos
-            </Link>
-            <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
-              Farmacia
-            </Link>
-            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
-              Devoluciones
-            </Link>
-            <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
-              Historial Medico
-            </Link>
-            <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
-              Buscar paciente
-            </Link>
-            <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
-              Reportes
-            </Link>
-          </div>          
-        </div>
+        <Sidebar isOpen={isSidebarOpen} />
         {/* /#sidebar-wrapper */}
         {/* Page Content */}
         <div id="page-content-wrapper">
-          <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <button className="btn btn-primary" id="menu-toggle" onClick={toggleSidebar}>
-              Menu
-            </button>
-          </nav>
+        <Navbar toggleSidebar={toggleSidebar} />
+
           <div className="container-fluid">
             <h2>Pacientes</h2>
 
@@ -207,6 +177,7 @@ function Home() {
             {/* Modal para mostrar los detalles del paciente */}
             {showModal && selectedPaciente && (
               <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                 <div className="modal-dialog modal-lg">
                   <div className="modal-content">
                     <div className="modal-header">
@@ -289,6 +260,7 @@ function Home() {
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             )}
             {showUpdateModal && selectedPaciente && (
