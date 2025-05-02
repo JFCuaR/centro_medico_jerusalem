@@ -1,8 +1,7 @@
 // src/AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
-
+import { jwtDecode } from 'jwt-decode'; // ✅ nombre correcto
 
 const AuthContext = createContext();
 
@@ -18,9 +17,8 @@ export const AuthProvider = ({ children }) => {
 
     if (storedToken) {
       try {
-        const decoded = jwt_decode(storedToken);
+        const decoded = jwtDecode(storedToken); // ✅ usar jwtDecode (con D mayúscula)
 
-        // Verifica expiración
         if (decoded.exp * 1000 < Date.now()) {
           logout();
         } else {
@@ -37,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   // Login: guarda token + decodifica + guarda usuario
   const login = (token) => {
     try {
-      const decoded = jwt_decode(token);
+      const decoded = jwtDecode(token); // ✅ corregido aquí también
       localStorage.setItem('token', token);
       setToken(token);
       setUser(decoded);
