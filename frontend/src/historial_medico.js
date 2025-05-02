@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthContext from './AuthContext';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import logo from './logo.jpg';
+import Sidebar from './sidebar'; // ← Importar 
+import Navbar from './Navbar'; 
 import './Home.css';
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
 
 function Home() {
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (user && user.nombre) {
+      setHistorialMedico(prev => ({
+        ...prev,
+        medico_responsable: user.nombre
+      }));
+    }
+  }, [user]);
+  
+
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [historialMedico, setHistorialMedico] = useState({
     nombre_paciente: '',
@@ -237,51 +252,11 @@ function Home() {
       <title>Ingreso de Historial Médico</title>
       <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
       <div className={`d-flex ${isSidebarOpen ? 'toggled' : ''}`} id="wrapper">
-        <div className="bg-dark border-right" id="sidebar-wrapper">
-          <div className="sidebar-heading text-white">
-            <br />
-            <br />
-            CENTRO MEDICO
-          </div>
-          <div className="sidebar-heading text-white">
-            JERUSALEM
-            <br />
-            <br />
-          </div>
-          <div className="list-group list-group-flush">
-          <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
-              Inicio
-             </Link>
-             <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Usuario
-             </Link>
-            <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Medicamentos
-            </Link>
-            <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
-              Farmacia
-            </Link>
-            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
-              Devoluciones
-            </Link>
-            <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
-              Historial Medico
-            </Link>
-            <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
-              Buscar paciente
-            </Link>
-            <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
-              Reportes
-            </Link>
-          </div>          
-        </div>
+        <Sidebar isOpen={isSidebarOpen} />
 
         <div id="page-content-wrapper">
-          <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <button className="btn btn-primary" id="menu-toggle" onClick={toggleSidebar}>
-              Menu
-            </button>
-          </nav>
+        <Navbar toggleSidebar={toggleSidebar} />
+
           <div className="container-fluid">
             <div className="row">
               <div className="col-md-12">
@@ -396,6 +371,7 @@ function Home() {
                         className="form-control"
                         name="medico_responsable"
                         value={historialMedico.medico_responsable}
+                        readOnly
                         onChange={handleHistorialChange}
                         required
                       />
@@ -455,7 +431,7 @@ function Home() {
                         </div>
                         <div className="col-md-2">
                           <input
-                            type="text"
+                            type="number"
                             step="0.1"
                             className="form-control"
                             name={`cantidad_${index}`}
@@ -477,7 +453,6 @@ function Home() {
                             <option value="cm">Cm</option>
                             <option value="puff">Puff</option>
                             <option value="ampolla">Ampolla</option>
-                            <option value="sobre">sobre</option>
                           </select>
                         </div>
                         <div className="col-md-3">
@@ -571,7 +546,7 @@ function Home() {
                   </div>
 
                   <button type="submit" className="btn btn-primary mt-3">
-                    Guardar
+                    Enviar
                   </button>
                   <button type="button" className="btn btn-secondary mt-3 ml-3" onClick={handleNuevo}>
                     Nuevo
