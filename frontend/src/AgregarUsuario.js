@@ -1,7 +1,9 @@
 import React, { useState, useContext} from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthContext from './AuthContext';  
+import AuthContext from './AuthContext'; 
+import Sidebar from './sidebar'; // ← Importar 
+import Navbar from './Navbar'; 
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
 
@@ -63,48 +65,13 @@ function AgregarUsuario() {
       />
       <div className={`d-flex ${isSidebarOpen ? 'toggled' : ''}`} id="wrapper">
         {/* Sidebar */}
-        <div className="bg-dark border-right" id="sidebar-wrapper">
-          <div className="sidebar-heading text-white"><br /><br />CENTRO MEDICO</div>
-          <div className="sidebar-heading text-white">JERUSALEM <br /><br /></div>
-          <div className="list-group list-group-flush">
-          <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
-              Inicio
-             </Link>
-             <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Usuario
-             </Link>
-            <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Medicamentos
-            </Link>
-            <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
-              Farmacia
-            </Link>
-            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
-              Devoluciones
-            </Link>
-            <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
-              Historial Medico
-            </Link>
-            <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
-              Buscar paciente
-            </Link>
-            <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
-              Reportes
-            </Link>
-          </div>          
-        </div>
+        <Sidebar isOpen={isSidebarOpen} />
         {/* /#sidebar-wrapper */}
         
         {/* Page Content */}
         <div id="page-content-wrapper">
-          <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <button className="btn btn-primary" id="menu-toggle" onClick={toggleSidebar}>
-              Menu
-            </button>
-            <button className="btn btn-danger ml-auto" onClick={handleLogout}>
-              Cerrar Sesión
-            </button>
-          </nav>
+        <Navbar toggleSidebar={toggleSidebar} />
+
           <div className="container mt-5">
       <h2>Agregar Nuevo Usuario</h2>
       <form onSubmit={handleSubmit}>
