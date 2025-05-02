@@ -6,6 +6,8 @@ import jsPDF from 'jspdf';
 import AuthContext from './AuthContext';
 import 'jspdf-autotable';
 import './Home.css';
+import Sidebar from './sidebar'; // ← Importar 
+import Navbar from './Navbar'; 
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
 
@@ -77,13 +79,14 @@ function Home() {
   }, []);
 
   const filteredMedicamentos = medicamentos
-    .filter((medicamento) =>
-      medicamento.nombre.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      medicamento.Descripcion.toLowerCase().includes(descriptionSearchTerm.toLowerCase()) &&
-      medicamento.codigo_barra.includes(barcodeSearchTerm) &&
-      medicamento.stock > 0
-    )
-    .sort((a, b) => new Date(a.Fecha_vencimiento) - new Date(b.Fecha_vencimiento));
+  .filter((medicamento) =>
+    (!searchTerm || medicamento.nombre?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!descriptionSearchTerm || medicamento.Descripcion?.toLowerCase().includes(descriptionSearchTerm.toLowerCase())) &&
+    (!barcodeSearchTerm || medicamento.codigo_barra?.includes(barcodeSearchTerm)) &&
+    medicamento.stock > 0
+  )
+  .sort((a, b) => new Date(a.Fecha_vencimiento) - new Date(b.Fecha_vencimiento));
+
 
   // Función para manejar el cambio de cantidad
   const handleQuantityChange = (id_medicamento, value) => {
@@ -256,45 +259,10 @@ function Home() {
       <title>Sidebar Template</title>
       <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
       <div className={`d-flex ${isSidebarOpen ? 'toggled' : ''}`} id="wrapper">
-        <div className={`bg-dark border-right ${isSidebarOpen ? 'sidebar-open' : ''}`} id="sidebar-wrapper">
-          <div className="sidebar-heading text-white"><br /><br />CENTRO MEDICO</div>
-          <div className="sidebar-heading text-white"> JERUSALEM <br /><br /></div>
-          <div className="list-group list-group-flush">
-          <Link to="/Home" className="list-group-item list-group-item-action bg-dark text-white">
-              Inicio
-             </Link>
-             <Link to="/AgregarUsuario" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Usuario
-             </Link>
-            <Link to="/Agregar_productos" className="list-group-item list-group-item-action bg-dark text-white">
-              Agregar Medicamentos
-            </Link>
-            <Link to="/ventas" className="list-group-item list-group-item-action bg-dark text-white">
-              Farmacia
-            </Link>
-            <Link to="/Devoluciones" className="list-group-item list-group-item-action bg-dark text-white">
-              Devoluciones
-            </Link>
-            <Link to="/Historial" className="list-group-item list-group-item-action bg-dark text-white">
-              Historial Medico
-            </Link>
-            <Link to="/Buscar_paciente" className="list-group-item list-group-item-action bg-dark text-white">
-              Buscar paciente
-            </Link>
-            <Link to="/Reportes" className="list-group-item list-group-item-action bg-dark text-white">
-              Reportes
-            </Link>
-          </div>          
-        </div>
+      <Sidebar isOpen={isSidebarOpen} />
         <div id="page-content-wrapper">
-          <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <button className="btn btn-primary" id="menu-toggle" onClick={toggleSidebar}>
-              Menu
-            </button>
-            <button className="btn btn-danger ml-auto" onClick={handleLogout}>
-              Cerrar Sesión
-            </button>
-          </nav>
+        <Navbar toggleSidebar={toggleSidebar} />
+
           <div className="container-fluid">
             <h2>Medicamentos</h2>
 
