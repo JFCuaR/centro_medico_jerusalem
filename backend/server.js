@@ -40,7 +40,17 @@ app.post('/login', async (req, res) => {
       const isMatch = await bcrypt.compare(password, user.contraseña);
 
       if (isMatch) {
-        const token = jwt.sign({ id: user.id_usuario, rol: user.rol }, 'secreto', { expiresIn: '1h' });
+        const token = jwt.sign(
+  {
+    id: user.id_usuario,
+    rol: user.rol,
+    nombre: user.nombre, // ✅ Agregamos el nombre al token
+    usuario: user.usuario // (opcional)
+  },
+  'secreto',
+  { expiresIn: '1h' }
+);
+
 
         return res.json({
           token,
