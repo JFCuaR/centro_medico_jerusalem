@@ -1,7 +1,6 @@
 // src/AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // ✅ nombre correcto
+import { jwtDecode } from 'jwt-decode'; // ✅ IMPORT CORRECTO
 
 const AuthContext = createContext();
 
@@ -9,21 +8,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
 
-  const API_URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001';
-
-  // Verifica el token al cargar
+  // Se ejecuta una vez al cargar para verificar si el token es válido
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
 
     if (storedToken) {
       try {
-        const decoded = jwtDecode(storedToken); // ✅ usar jwtDecode (con D mayúscula)
+        const decoded = jwtDecode(storedToken); // ✅ DECODIFICAR TOKEN
 
+        // Verifica si el token expiró
         if (decoded.exp * 1000 < Date.now()) {
           logout();
         } else {
           setToken(storedToken);
-          setUser(decoded);
+          setUser(decoded); // ✅ Guarda todos los datos del token (nombre, rol, etc.)
         }
       } catch (error) {
         console.error('Token inválido:', error);
@@ -32,15 +30,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Login: guarda token + decodifica + guarda usuario
+  // Guarda token y usuario en login
   const login = (token) => {
     try {
-      const decoded = jwtDecode(token); // ✅ corregido aquí también
+      const decoded = jwtDecode(token);
       localStorage.setItem('token', token);
       setToken(token);
-      setUser(decoded);
+      setUser(decoded); // ✅ Accede a nombre, rol, id, etc.
     } catch (error) {
-      console.error('Error al decodificar token durante login:', error);
+      console.error('Error al decodificar token en login:', error);
     }
   };
 
