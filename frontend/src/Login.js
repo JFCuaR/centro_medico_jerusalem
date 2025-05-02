@@ -27,7 +27,8 @@ const Login = () => {
             if (response.data.token) {
                 const token = response.data.token;
                 const rol = response.data.rol; // Obtenemos el rol del usuario
-                login(token); // Guarda el token en el contexto o localStorage
+                const user = response.data.user;
+                login(token, user); // Guarda el token en el contexto o localStorage
 
                 // Redirigir según el rol
                 if (rol === 'empleado') {
