@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import logo from './logo.jpg';
 import Sidebar from './sidebar'; // ← Importar 
-import Navbar from './Navbar'; 
+import Navbar from './Navbar';
 import './Home.css';
 
 const URL = process.env.REACT_APP_URL_BACKEND || 'http://localhost:3001'
@@ -22,7 +22,7 @@ function Home() {
       }));
     }
   }, [user]);
-  
+
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [historialMedico, setHistorialMedico] = useState({
@@ -35,7 +35,7 @@ function Home() {
     religion: '',
     medico_responsable: '',
     medicamentos_recetados: [
-      { nombre: '', modo_administracion: '', cantidad: '', unidad: '', comentario: '' }
+      { nombre: ''}
     ],
     antecedentes_medico: '',
     antecedentes_quirurgico: '',
@@ -53,17 +53,33 @@ function Home() {
     setSidebarOpen(!isSidebarOpen);
   };
 
+  const formatearFecha = (fecha) => {
+    if (!fecha) return null;
+    return fecha.slice(0, 10);
+  };
+
+
   const handleNombreChange = async (e) => {
     const value = e.target.value;
     setHistorialMedico({ ...historialMedico, nombre_paciente: value });
-    
-    // Realizar la búsqueda de pacientes
+
     if (value.length >= 3) {
       try {
         const { data } = await axios.get(`${URL}/buscar_pacientes`, {
           params: { nombre: value }
         });
-        setSugerencias(data); // Actualiza las sugerencias
+
+        // Filtrar sugerencias por nombre único
+        const nombresUnicos = new Set();
+        const pacientesFiltrados = data.filter(paciente => {
+          if (!nombresUnicos.has(paciente.nombre_paciente)) {
+            nombresUnicos.add(paciente.nombre_paciente);
+            return true;
+          }
+          return false;
+        });
+
+        setSugerencias(pacientesFiltrados);
       } catch (error) {
         console.error('Error al buscar pacientes:', error);
       }
@@ -72,6 +88,7 @@ function Home() {
     }
   };
 
+
   const handleSeleccionarSugerencia = async (paciente) => {
     setHistorialMedico({
       ...historialMedico,
@@ -79,6 +96,10 @@ function Home() {
       dpi: paciente.dpi,
       sexo: paciente.sexo,
       religion: paciente.religion,
+      telefono: paciente.telefono || '',
+      fecha_nacimiento: paciente.fecha_nacimiento ? paciente.fecha_nacimiento.slice(0, 10) : '',
+      
+
       antecedentes_medico: paciente.antecedentes_medico,
       antecedentes_quirurgico: paciente.antecedentes_quirurgico,
       antecedentes_alergico: paciente.antecedentes_alergico,
@@ -97,29 +118,10 @@ function Home() {
       const nuevosMedicamentos = [...historialMedico.medicamentos_recetados];
       nuevosMedicamentos[index].nombre = value;
       setHistorialMedico({ ...historialMedico, medicamentos_recetados: nuevosMedicamentos });
-    } else if (name.startsWith('modo_')) {
-      const index = parseInt(name.split('_')[1], 10);
-      const nuevosMedicamentos = [...historialMedico.medicamentos_recetados];
-      nuevosMedicamentos[index].modo_administracion = value;
-      setHistorialMedico({ ...historialMedico, medicamentos_recetados: nuevosMedicamentos });
-    } else if (name.startsWith('cantidad_')) {
-      const index = parseInt(name.split('_')[1], 10);
-      const nuevosMedicamentos = [...historialMedico.medicamentos_recetados];
-      nuevosMedicamentos[index].cantidad = value;
-      setHistorialMedico({ ...historialMedico, medicamentos_recetados: nuevosMedicamentos });
-    } else if (name.startsWith('unidad_')) {
-      const index = parseInt(name.split('_')[1], 10);
-      const nuevosMedicamentos = [...historialMedico.medicamentos_recetados];
-      nuevosMedicamentos[index].unidad = value;
-      setHistorialMedico({ ...historialMedico, medicamentos_recetados: nuevosMedicamentos });
-    } else if (name.startsWith('comentario_')) {
-      const index = parseInt(name.split('_')[1], 10);
-      const nuevosMedicamentos = [...historialMedico.medicamentos_recetados];
-      nuevosMedicamentos[index].comentario = value;
-      setHistorialMedico({ ...historialMedico, medicamentos_recetados: nuevosMedicamentos });
     } else {
       setHistorialMedico({ ...historialMedico, [name]: value });
     }
+    
   };
 
   const handleAddMedicamento = () => {
@@ -127,7 +129,7 @@ function Home() {
       ...prevState,
       medicamentos_recetados: [
         ...prevState.medicamentos_recetados,
-        { nombre: '', modo_administracion: '', cantidad: '', unidad: '', comentario: '' }
+        { nombre: ''}
       ],
     }));
   };
@@ -188,7 +190,7 @@ function Home() {
       religion: '',
       medico_responsable: '',
       telefono: '',  // Agregado
-      fecha_nacimiento: '',  
+      fecha_nacimiento: '',
       medicamentos_recetados: [
         { nombre: '', modo_administracion: '', cantidad: '', unidad: '', comentario: '' }
       ],
@@ -201,7 +203,7 @@ function Home() {
     });
     setRecetaGenerada(false);  // Oculta la receta generada
   };
-  
+
   const handleGeneratePDF = () => {
     const doc = new jsPDF();
     const imgData = logo;
@@ -226,7 +228,7 @@ function Home() {
       .filter((med) => med.nombre.trim() !== '')
       .forEach((medicamento, index) => {
         doc.text(
-          `${index + 1}. ${medicamento.nombre}, ${medicamento.modo_administracion}, ${medicamento.cantidad} ${medicamento.unidad}${medicamento.comentario ? `, ${medicamento.comentario}` : ''}`,
+          `${index + 1}. ${medicamento.nombre}`,
           20,
           yPosition
         );
@@ -253,9 +255,11 @@ function Home() {
       <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
       <div className={`d-flex ${isSidebarOpen ? 'toggled' : ''}`} id="wrapper">
         <Sidebar isOpen={isSidebarOpen} />
-
+        {isSidebarOpen && (
+          <div className="overlay" onClick={() => setSidebarOpen(false)}></div>
+        )}
         <div id="page-content-wrapper">
-        <Navbar toggleSidebar={toggleSidebar} />
+          <Navbar toggleSidebar={toggleSidebar} />
 
           <div className="container-fluid">
             <div className="row">
@@ -264,27 +268,27 @@ function Home() {
                 <form onSubmit={handleSubmit}>
                   <div className="form-row">
                     <div className="form-group col-md-6">
-                    <label>Nombre del Paciente:</label>
-          <input
-            type="text"
-            className="form-control"
-            name="nombre_paciente"
-            value={historialMedico.nombre_paciente}
-            onChange={handleNombreChange}
-            autoComplete="off"
-          />
-          {sugerencias.length > 0 && (
-            <ul className="suggestions-list">
-              {sugerencias.map((sugerencia) => (
-                <li
-                  key={sugerencia.dpi}
-                  onClick={() => handleSeleccionarSugerencia(sugerencia)}
-                >
-                  {sugerencia.nombre_paciente}
-                </li>
-              ))}
-            </ul>
-          )}
+                      <label>Nombre del Paciente:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="nombre_paciente"
+                        value={historialMedico.nombre_paciente}
+                        onChange={handleNombreChange}
+                        autoComplete="off"
+                      />
+                      {sugerencias.length > 0 && (
+                        <ul className="suggestions-list">
+                          {sugerencias.map((sugerencia) => (
+                            <li
+                              key={sugerencia.dpi}
+                              onClick={() => handleSeleccionarSugerencia(sugerencia)}
+                            >
+                              {sugerencia.nombre_paciente}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <div className="form-group col-md-6">
                       <label>Fecha de Consulta:</label>
@@ -377,96 +381,45 @@ function Home() {
                       />
                     </div>
                     <div className="form-group col-md-6">
-    <label>Teléfono:</label>
-    <input
-      type="text"
-      className="form-control"
-      name="telefono"
-      value={historialMedico.telefono}
-      onChange={handleHistorialChange}
-      maxLength={15}
-      required
-    />
-  </div>
-  <div className="form-group col-md-6">
-    <label>Fecha de Nacimiento:</label>
-    <input
-      type="date"
-      className="form-control"
-      name="fecha_nacimiento"
-      value={historialMedico.fecha_nacimiento}
-      onChange={handleHistorialChange}
-      required
-    />
-  </div>
+                      <label>Teléfono:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="telefono"
+                        value={historialMedico.telefono}
+                        onChange={handleHistorialChange}
+                        maxLength={15}
+                        required
+                      />
+                    </div>
+                    <div className="form-group col-md-6">
+                      <label>Fecha de Nacimiento:</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        name="fecha_nacimiento"
+                        value={historialMedico.fecha_nacimiento}
+                        onChange={handleHistorialChange}
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="form-group">
                     <label>Medicamentos Recetados:</label>
                     {historialMedico.medicamentos_recetados.map((medicamento, index) => (
-                      <div key={index} className="form-row align-items-center mb-2">
-                        <div className="col-md-3">
-                          <input
-                            type="text"
-                            className="form-control"
-                            name={`medicamento_${index}`}
-                            value={medicamento.nombre}
-                            placeholder={`Medicamento ${index + 1}`}
-                            onChange={handleHistorialChange}
-                          />
-                        </div>
-                        <div className="col-md-2">
-                          <select
-                            className="form-control"
-                            name={`modo_${index}`}
-                            value={medicamento.modo_administracion}
-                            onChange={handleHistorialChange}
-                          >
-                            <option value="">Seleccionar</option>
-                            <option value="tomar">Tomar</option>
-                            <option value="inhalar">Inhalar</option>
-                            <option value="inyectar">Inyectar</option>
-                            <option value="nebulizar">Nebulizar</option>
-                          </select>
-                        </div>
-                        <div className="col-md-2">
-                          <input
-                            type="number"
-                            step="0.1"
-                            className="form-control"
-                            name={`cantidad_${index}`}
-                            value={medicamento.cantidad}
-                            placeholder="Cantidad"
-                            onChange={handleHistorialChange}
-                          />
-                        </div>
-                        <div className="col-md-2">
-                          <select
-                            className="form-control"
-                            name={`unidad_${index}`}
-                            value={medicamento.unidad}
-                            onChange={handleHistorialChange}
-                          >
-                            <option value="">Unidad</option>
-                            <option value="tabletas">Tabletas</option>
-                            <option value="gotas">Gotas</option>
-                            <option value="cm">Cm</option>
-                            <option value="puff">Puff</option>
-                            <option value="ampolla">Ampolla</option>
-                          </select>
-                        </div>
-                        <div className="col-md-3">
-                          <input
-                            type="text"
-                            className="form-control"
-                            name={`comentario_${index}`}
-                            value={medicamento.comentario}
-                            placeholder="Dosis"
-                            onChange={handleHistorialChange}
-                          />
-                        </div>
-                      </div>
-                    ))}
+  <div key={index} className="form-group">
+    <input
+      type="text"
+      className="form-control"
+      name={`medicamento_${index}`}
+      value={medicamento.nombre}
+      placeholder={`Medicamento ${index + 1}`}
+      onChange={handleHistorialChange}
+    />
+  </div>
+))}
+
 
                     <button
                       type="button"
