@@ -93,6 +93,11 @@ function Home() {
         {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} />
         {/* /#sidebar-wrapper */}
+
+        {isSidebarOpen && (
+  <div className="overlay" onClick={() => setSidebarOpen(false)}></div>
+)}
+
         {/* Page Content */}
         <div id="page-content-wrapper">
         <Navbar toggleSidebar={toggleSidebar} />
@@ -126,52 +131,57 @@ function Home() {
             </button>
 
             {/* Tabla responsive */}
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre del Paciente</th>
-                    <th>DPI</th>
-                    <th>Fecha de Consulta</th>
-                    <th>Diagnóstico</th>
-                    <th>Telefono</th>
-                    <th>Medicamentos Recetados</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pacientes.map((paciente) => (
-                    <tr key={paciente.id}>
-                      <td>{paciente.id}</td>
-                      <td>{paciente.nombre_paciente}</td>
-                      <td>{paciente.dpi}</td>
-                      <td> {paciente.fecha_consulta
-                            ? paciente.fecha_consulta.slice(0, 10).split('-').reverse().join('/')
-                           : 'No disponible'}
-                      </td>
-                      <td>{paciente.diagnostico}</td>
-                      <td>{paciente.telefono}</td>
-                      <td>
-                        <ul>
-                          {paciente.medicamentos_recetados.map((medicamento, index) => (
-                            <li key={index}>{medicamento}</li>
-                          ))}
-                        </ul>
-                      </td>
-                      <td>
-                      <button className="btn btn-info mr-2" onClick={() => handleVisualizar(paciente)}>
-                       Visualizar
-                      </button>
-                      <button className="btn btn-warning" onClick={() => handleActualizar(paciente)}>
-                       Actualizar
-                       </button>
-                      </td>
+            <div className="table-wrapper">
+            <table className="table table-striped sticky-header">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre del Paciente</th>
+      <th>DPI</th>
+      <th>Fecha de Consulta</th>
+      <th>Diagnóstico</th>
+      <th>Telefono</th>
+      <th>Medicamentos Recetados</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {pacientes.map((paciente) => (
+      <tr key={paciente.id}>
+        <td>{paciente.id}</td>
+        <td>{paciente.nombre_paciente}</td>
+        <td>{paciente.dpi}</td>
+        <td>
+          {paciente.fecha_consulta
+            ? paciente.fecha_consulta.slice(0, 10).split('-').reverse().join('/')
+            : 'No disponible'}
+        </td>
+        <td>{paciente.diagnostico}</td>
+        <td>{paciente.telefono}</td>
+        <td>
+        <ul>
+  {paciente.medicamentos_recetados
+    .join('|')
+    .split('|')
+    .map((medicamento, index) => (
+      <li key={index}>{medicamento.trim()}</li>
+    ))}
+</ul>
 
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        </td>
+        <td>
+          <button className="btn btn-info mr-2" onClick={() => handleVisualizar(paciente)}>
+            Visualizar
+          </button>
+          <button className="btn btn-warning" onClick={() => handleActualizar(paciente)}>
+            Actualizar
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
             </div>
 
             {/* Modal para mostrar los detalles del paciente */}
