@@ -398,12 +398,10 @@ app.get('/vermedicamentos', async (req, res) => {
   
     // Convertir medicamentos_recetados a una cadena con formato adecuado
     const medicamentosFormateados = medicamentos_recetados
-      .filter(medicamento => medicamento.nombre && medicamento.modo_administracion && medicamento.cantidad && medicamento.unidad)
-      .map(medicamento => {
-        const comentario = medicamento.comentario ? ` ${medicamento.comentario}` : '';
-        return `${medicamento.nombre} ${medicamento.modo_administracion} ${medicamento.cantidad} ${medicamento.unidad}${comentario}`;
-      })
-      .join(' | ');  // Separar medicamentos diferentes con ' | '
+  .filter(m => m.nombre && m.nombre.trim() !== '')  // Solo filtramos por nombre
+  .map(m => m.nombre.trim())
+  .join(' | ');
+  // Separar medicamentos diferentes con ' | '
   
     try {
       // Insertar en la tabla historial_medico
