@@ -14,7 +14,7 @@ app.use(express.json());
 const db = require('./db');
 
 // Ruta para manejar el inicio de sesión
-app.post('/login', async (req, res) => {
+app.post('/logi', async (req, res) => {
   const { username, password } = req.body;
 
   console.log('Intento de login:', username, password);
